@@ -1,0 +1,42 @@
+name: Create DVS Gesture Spikformer Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: dvs-gesture-spikformer-20260610
+      ASSET_DIR: release-assets/dvs_gesture_spikformer_full_with_deps_20260610
+      ASSET_NAME: dvs_gesture_spikformer_full_with_deps_20260610.tar.gz
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reconstruct archive
+        run: |
+          set -euo pipefail
+          cd "$ASSET_DIR"
+          cat "$ASSET_NAME".part-* > "$ASSET_NAME"
+          sha256sum -c SHA256SUMS.txt
+          ls -lh "$ASSET_NAME"
+
+      - name: Create or update GitHub Release
+        run: |
+          set -euo pipefail
+          cd "$ASSET_DIR"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ASSET_NAME" --clobber
+          else
+            gh release create "$TAG" "$ASSET_NAME" \
+              --title "DVS Gesture Spikformer full package 20260610" \
+              --notes-file RELEASE_NOTES.md
+          fi
